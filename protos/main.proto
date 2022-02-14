@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+import "co/mechen/distr/common/v1.proto";
+
+package s3;
+
+service MainService {
+    rpc Reflect(co.mechen.distr.common.v1.ReflectMethodRequest) returns (co.mechen.distr.common.v1.ReflectMethodResponse) {}
+}
+
+message Bucket {
+    string name = 1;
+}
+
+message BucketById {
+    string id = 1;
+}
+
+message DeleteBucketRequest {
+    string id = 1;
+}
+
+message CreateBucketRequest {
+    string name = 1;
+    string region = 2;
+}

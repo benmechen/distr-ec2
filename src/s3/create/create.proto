@@ -1,0 +1,6 @@
+syntax = "proto3";
+
+message CreateBucketRequest {
+    string name = 1;
+    string region = 2;
+}
