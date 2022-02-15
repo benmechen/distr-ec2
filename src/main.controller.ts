@@ -1,6 +1,9 @@
 import { Controller } from '@nestjs/common';
+import { Observable } from 'rxjs';
 import {
-  Input_Type,
+  CreateRequest,
+  CreateResponse,
+  InputField_Type,
   Method,
   ReflectMethodRequest,
   ReflectMethodResponse,
@@ -25,10 +28,24 @@ export class MainController implements MainServiceController {
             {
               name: 'name',
               description: 'Bucket name (must be globally unique)',
-              type: Input_Type.STRING,
+              type: InputField_Type.STRING,
+              fields: {},
+            },
+            {
+              name: 'credentials',
+              description: 'AWS Credentials',
+              type: InputField_Type.STRING,
+              fields: {},
             },
           ],
         };
     }
+  }
+
+  create(request: CreateRequest): CreateResponse {
+    console.log('Create:', request.payload, request.credentials);
+    return {
+      status: true,
+    };
   }
 }

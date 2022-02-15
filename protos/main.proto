@@ -6,6 +6,7 @@ package s3;
 
 service MainService {
     rpc Reflect(co.mechen.distr.common.v1.ReflectMethodRequest) returns (co.mechen.distr.common.v1.ReflectMethodResponse) {}
+    rpc Create(co.mechen.distr.common.v1.CreateRequest) returns (co.mechen.distr.common.v1.CreateResponse) {}
 }
 
 message Bucket {

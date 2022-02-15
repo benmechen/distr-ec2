@@ -5,7 +5,9 @@ import * as Long from 'long';
 import { Observable } from 'rxjs';
 import {
   ReflectMethodResponse,
+  CreateResponse,
   ReflectMethodRequest,
+  CreateRequest,
 } from './co/mechen/distr/common/v1';
 
 export const protobufPackage = 's3';
@@ -31,6 +33,8 @@ export const S3_PACKAGE_NAME = 's3';
 
 export interface MainServiceClient {
   reflect(request: ReflectMethodRequest): Observable<ReflectMethodResponse>;
+
+  create(request: CreateRequest): Observable<CreateResponse>;
 }
 
 export interface MainServiceController {
@@ -40,11 +44,15 @@ export interface MainServiceController {
     | Promise<ReflectMethodResponse>
     | Observable<ReflectMethodResponse>
     | ReflectMethodResponse;
+
+  create(
+    request: CreateRequest,
+  ): Promise<CreateResponse> | Observable<CreateResponse> | CreateResponse;
 }
 
 export function MainServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ['reflect'];
+    const grpcMethods: string[] = ['reflect', 'create'];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(
         constructor.prototype,
