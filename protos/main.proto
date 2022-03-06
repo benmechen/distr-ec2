@@ -6,7 +6,12 @@ package s3;
 
 service MainService {
     rpc Reflect(co.mechen.distr.common.v1.ReflectMethodRequest) returns (co.mechen.distr.common.v1.ReflectMethodResponse) {}
+    rpc Get(co.mechen.distr.common.v1.GetRequest) returns (co.mechen.distr.common.v1.GetResponse) {}
+    rpc Status(co.mechen.distr.common.v1.StatusRequest) returns (co.mechen.distr.common.v1.StatusResponse) {}
+    rpc Usage(co.mechen.distr.common.v1.UsageRequest) returns (co.mechen.distr.common.v1.UsageResponse) {}
     rpc Create(co.mechen.distr.common.v1.CreateRequest) returns (co.mechen.distr.common.v1.CreateResponse) {}
+    rpc Update(co.mechen.distr.common.v1.UpdateRequest) returns (co.mechen.distr.common.v1.UpdateResponse) {}
+    rpc Delete(co.mechen.distr.common.v1.DeleteRequest) returns (co.mechen.distr.common.v1.DeleteResponse) {}
 }
 
 message Bucket {
@@ -15,13 +20,4 @@ message Bucket {
 
 message BucketById {
     string id = 1;
-}
-
-message DeleteBucketRequest {
-    string id = 1;
-}
-
-message CreateBucketRequest {
-    string name = 1;
-    string region = 2;
 }

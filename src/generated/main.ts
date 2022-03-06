@@ -5,9 +5,19 @@ import * as Long from 'long';
 import { Observable } from 'rxjs';
 import {
 	ReflectMethodResponse,
+	GetResponse,
+	StatusResponse,
+	UsageResponse,
 	CreateResponse,
+	UpdateResponse,
+	DeleteResponse,
 	ReflectMethodRequest,
+	GetRequest,
+	StatusRequest,
+	UsageRequest,
 	CreateRequest,
+	UpdateRequest,
+	DeleteRequest,
 } from './co/mechen/distr/common/v1';
 
 export const protobufPackage = 's3';
@@ -20,21 +30,22 @@ export interface BucketById {
 	id: string;
 }
 
-export interface DeleteBucketRequest {
-	id: string;
-}
-
-export interface CreateBucketRequest {
-	name: string;
-	region: string;
-}
-
 export const S3_PACKAGE_NAME = 's3';
 
 export interface MainServiceClient {
 	reflect(request: ReflectMethodRequest): Observable<ReflectMethodResponse>;
 
+	get(request: GetRequest): Observable<GetResponse>;
+
+	status(request: StatusRequest): Observable<StatusResponse>;
+
+	usage(request: UsageRequest): Observable<UsageResponse>;
+
 	create(request: CreateRequest): Observable<CreateResponse>;
+
+	update(request: UpdateRequest): Observable<UpdateResponse>;
+
+	delete(request: DeleteRequest): Observable<DeleteResponse>;
 }
 
 export interface MainServiceController {
@@ -45,14 +56,42 @@ export interface MainServiceController {
 		| Observable<ReflectMethodResponse>
 		| ReflectMethodResponse;
 
+	get(
+		request: GetRequest,
+	): Promise<GetResponse> | Observable<GetResponse> | GetResponse;
+
+	status(
+		request: StatusRequest,
+	): Promise<StatusResponse> | Observable<StatusResponse> | StatusResponse;
+
+	usage(
+		request: UsageRequest,
+	): Promise<UsageResponse> | Observable<UsageResponse> | UsageResponse;
+
 	create(
 		request: CreateRequest,
 	): Promise<CreateResponse> | Observable<CreateResponse> | CreateResponse;
+
+	update(
+		request: UpdateRequest,
+	): Promise<UpdateResponse> | Observable<UpdateResponse> | UpdateResponse;
+
+	delete(
+		request: DeleteRequest,
+	): Promise<DeleteResponse> | Observable<DeleteResponse> | DeleteResponse;
 }
 
 export function MainServiceControllerMethods() {
 	return function (constructor: Function) {
-		const grpcMethods: string[] = ['reflect', 'create'];
+		const grpcMethods: string[] = [
+			'reflect',
+			'get',
+			'status',
+			'usage',
+			'create',
+			'update',
+			'delete',
+		];
 		for (const method of grpcMethods) {
 			const descriptor: any = Reflect.getOwnPropertyDescriptor(
 				constructor.prototype,
