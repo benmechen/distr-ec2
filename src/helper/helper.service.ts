@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { Validator } from 'class-validator';
+import { status as GrpcStatus } from '@grpc/grpc-js';
 import { Input, Property } from '../generated/co/mechen/distr/common/v1';
 
 @Injectable()
@@ -18,7 +20,15 @@ export class HelperService {
 				input.value.boolValue ??
 				input.value.structValue;
 		});
-		await this.validator.validateOrReject(dto);
+		const errors = await this.validator.validate(dto, {
+			validationError: { target: false },
+			stopAtFirstError: true,
+		});
+		if (errors.length > 0)
+			throw new RpcException({
+				code: GrpcStatus.FAILED_PRECONDITION,
+				message: Object.values(errors[0].constraints).join(', '),
+			});
 		return dto;
 	}
 

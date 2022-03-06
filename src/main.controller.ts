@@ -1,5 +1,7 @@
 import { Controller } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import { RpcException } from '@nestjs/microservices';
+import { status as GrpcStatus } from '@grpc/grpc-js';
+import { BucketAlreadyExists } from '@aws-sdk/client-s3';
 import { MissingCredentialsException } from './exceptions/missing-credentials.exception';
 import {
 	CreateRequest,
@@ -151,15 +153,55 @@ export class MainController implements MainServiceController {
 			request.payload,
 		);
 
-		const status = await this.s3Service.create(
-			credentials,
-			request.resourceId,
-			input,
-		);
-
-		return {
-			status,
-		};
+		try {
+			const status = await this.s3Service.create(
+				credentials,
+				request.resourceId,
+				input,
+			);
+			return { status };
+		} catch (err) {
+			switch (err.name) {
+				case 'BucketAlreadyExists':
+					throw new RpcException({
+						message:
+							'A bucket with that name already exists. Bucket names must be unique.',
+						code: GrpcStatus.ALREADY_EXISTS,
+					});
+				case 'InvalidSecurity':
+				case 'InvalidAccessKeyId':
+					throw new RpcException({
+						code: GrpcStatus.PERMISSION_DENIED,
+						message: 'The given credentials are not valid',
+					});
+				case 'BucketAlreadyOwnedByYou':
+					throw new RpcException({
+						message:
+							'You already have a bucket with that name. Bucket names must be unique.',
+						code: GrpcStatus.ALREADY_EXISTS,
+					});
+				case 'InvalidBucketName':
+					throw new RpcException({
+						message: 'That bucket name is invalid',
+						code: GrpcStatus.FAILED_PRECONDITION,
+					});
+				case 'TooManyBuckets':
+					throw new RpcException({
+						message: 'You have too many existing S3 buckets',
+						code: GrpcStatus.OUT_OF_RANGE,
+					});
+				case 'InvalidBucketName':
+					throw new RpcException({
+						message: 'That bucket name is invalid',
+						code: GrpcStatus.FAILED_PRECONDITION,
+					});
+				default:
+					throw new RpcException({
+						code: GrpcStatus.UNKNOWN,
+						message: `Unkown error occurred [${err.name}]`,
+					});
+			}
+		}
 	}
 
 	async update(request: UpdateRequest): Promise<UpdateResponse> {
@@ -170,28 +212,79 @@ export class MainController implements MainServiceController {
 			request.payload,
 		);
 
-		const status = await this.s3Service.update(
-			credentials,
-			request.resourceId,
-			input,
-		);
+		try {
+			const status = await this.s3Service.update(
+				credentials,
+				request.resourceId,
+				input,
+			);
 
-		return {
-			status,
-		};
+			return {
+				status,
+			};
+		} catch (err) {
+			switch (err.name) {
+				case 'AccessDenied':
+					throw new RpcException({
+						code: GrpcStatus.PERMISSION_DENIED,
+						message: 'You do not have access to that bucket',
+					});
+				case 'NoSuchBucket':
+					throw new RpcException({
+						code: GrpcStatus.NOT_FOUND,
+						message: 'No bucket could be found with that name',
+					});
+				case 'InvalidSecurity':
+				case 'InvalidAccessKeyId':
+					throw new RpcException({
+						code: GrpcStatus.PERMISSION_DENIED,
+						message: 'The given credentials are not valid',
+					});
+				default:
+					return {
+						status: false,
+					};
+			}
+		}
 	}
 
 	async delete(request: DeleteRequest): Promise<DeleteResponse> {
 		const credentials = request.credentials.aws;
 		if (!credentials) throw new MissingCredentialsException('AWS');
 
-		const status = await this.s3Service.delete(
-			credentials,
-			request.resourceId,
-		);
+		try {
+			const status = await this.s3Service.delete(
+				credentials,
+				request.resourceId,
+			);
 
-		return {
-			status,
-		};
+			return {
+				status,
+			};
+		} catch (err) {
+			switch (err.name) {
+				case 'AccessDenied':
+					throw new RpcException({
+						code: GrpcStatus.PERMISSION_DENIED,
+						message: 'You do not have access to that bucket',
+					});
+				case 'InvalidSecurity':
+				case 'InvalidAccessKeyId':
+					throw new RpcException({
+						code: GrpcStatus.PERMISSION_DENIED,
+						message: 'The given credentials are not valid',
+					});
+				case 'BucketNotEmpty':
+					throw new RpcException({
+						code: GrpcStatus.FAILED_PRECONDITION,
+						message:
+							'Buckets must be empty before they can be deleted',
+					});
+				default:
+					return {
+						status: false,
+					};
+			}
+		}
 	}
 }

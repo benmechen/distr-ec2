@@ -13,7 +13,13 @@ export class CreateBucketDTO {
 	name: string;
 
 	@IsOptional()
-	@IsIn(['private', 'public-read', 'public-read-write', 'authenticated-read'])
+	@IsIn(
+		['private', 'public-read', 'public-read-write', 'authenticated-read'],
+		{
+			message:
+				'ACL must be one of: private, public-read, public-read-write, authenticated-read',
+		},
+	)
 	access?:
 		| 'private'
 		| 'public-read'
