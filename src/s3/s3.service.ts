@@ -43,10 +43,11 @@ export class S3Service {
 			name: s3.name,
 			location: location.LocationConstraint,
 			items: items.KeyCount,
-			size: items.Contents.reduce(
-				(current, item) => current + item.Size,
-				0,
-			),
+			size:
+				items.Contents?.reduce(
+					(current, item) => current + item.Size,
+					0,
+				) ?? 0,
 		};
 	}
 
