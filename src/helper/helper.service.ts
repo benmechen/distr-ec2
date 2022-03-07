@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { Validator } from 'class-validator';
 import { status as GrpcStatus } from '@grpc/grpc-js';
-import { Input, Property } from '../generated/co/mechen/distr/common/v1';
+import { Input, Property, Value } from '../generated/co/mechen/distr/common/v1';
 
 @Injectable()
 export class HelperService {
@@ -15,8 +15,8 @@ export class HelperService {
 		const dto = new DTO();
 		payload.forEach((input) => {
 			dto[input.name] =
-				input.value.stringValue ??
 				input.value.numberValue ??
+				input.value.stringValue ??
 				input.value.boolValue ??
 				input.value.structValue;
 		});
@@ -47,5 +47,47 @@ export class HelperService {
 						: undefined,
 			},
 		}));
+	}
+
+	value(value: string | number | boolean | object): Value {
+		switch (typeof value) {
+			case 'boolean':
+				return {
+					boolValue: value,
+					numberValue: undefined,
+					stringValue: undefined,
+					structValue: undefined,
+				};
+			case 'string':
+				return {
+					boolValue: undefined,
+					numberValue: undefined,
+					stringValue: value,
+					structValue: undefined,
+				};
+			case 'number':
+				return {
+					boolValue: undefined,
+					numberValue: value,
+					stringValue: undefined,
+					structValue: undefined,
+				};
+			case 'object':
+				return {
+					boolValue: undefined,
+					numberValue: undefined,
+					stringValue: undefined,
+					structValue: {
+						fields: value as Record<string, Value>,
+					},
+				};
+			default:
+				return {
+					boolValue: undefined,
+					numberValue: undefined,
+					stringValue: undefined,
+					structValue: undefined,
+				};
+		}
 	}
 }

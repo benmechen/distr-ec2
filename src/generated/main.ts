@@ -20,17 +20,9 @@ import {
 	DeleteRequest,
 } from './co/mechen/distr/common/v1';
 
-export const protobufPackage = 's3';
+export const protobufPackage = 'sqs';
 
-export interface Bucket {
-	name: string;
-}
-
-export interface BucketById {
-	id: string;
-}
-
-export const S3_PACKAGE_NAME = 's3';
+export const SQS_PACKAGE_NAME = 'sqs';
 
 export interface MainServiceClient {
 	reflect(request: ReflectMethodRequest): Observable<ReflectMethodResponse>;

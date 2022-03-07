@@ -1,7 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { status as GrpcStatus } from '@grpc/grpc-js';
-import { BucketAlreadyExists } from '@aws-sdk/client-s3';
 import { MissingCredentialsException } from './exceptions/missing-credentials.exception';
 import {
 	CreateRequest,
@@ -14,12 +13,10 @@ import {
 	Method,
 	ReflectMethodRequest,
 	ReflectMethodResponse,
-	Status,
 	StatusRequest,
 	StatusResponse,
 	UpdateRequest,
 	UpdateResponse,
-	UsageRequest,
 	UsageResponse,
 	UsageType,
 } from './generated/co/mechen/distr/common/v1';
@@ -28,15 +25,15 @@ import {
 	MainServiceControllerMethods,
 } from './generated/main';
 import { HelperService } from './helper/helper.service';
-import { CreateBucketDTO } from './s3/dto/create-bucket.dto';
-import { UpdateBucketDTO } from './s3/dto/update-bucket.dto';
-import { S3Service } from './s3/s3.service';
+import { SqsService } from './sqs/sqs.service';
+import { CreateQueueDTO } from './sqs/dto/create-queue.dto';
+import { UpdateQueueDTO } from './sqs/dto/update-queue.dto';
 
 @Controller()
 @MainServiceControllerMethods()
 export class MainController implements MainServiceController {
 	constructor(
-		private readonly s3Service: S3Service,
+		private readonly sqsService: SqsService,
 		private readonly helperService: HelperService,
 	) {}
 
@@ -77,16 +74,86 @@ export class MainController implements MainServiceController {
 						{
 							name: 'name',
 							description:
-								'Bucket name (must be globally unique)',
+								'Queue name (up to 80 alphanumeric characters, must end with .fifo if a FiFo queue)',
 							type: Field_Type.STRING,
 							required: true,
 							fields: {},
 						},
 						{
-							name: 'access',
+							name: 'fifo',
 							description:
-								'ACL Access Level (private, public-read, public-read-write, authenticated-read)',
+								'Create a FiFo queue (leave unchecked for a standard queue)',
+							type: Field_Type.BOOLEAN,
+							required: false,
+							defaultValue: this.helperService.value(false),
+							fields: {},
+						},
+						{
+							name: 'delay',
+							description:
+								'The length of time, in seconds, for which the delivery of all messages in the queue is delayed. Valid values: An integer from 0 to 900 seconds (15 minutes). Default: 0.',
+							type: Field_Type.NUMBER,
+							required: false,
+							defaultValue: this.helperService.value(0),
+							fields: {},
+						},
+						{
+							name: 'maxMessageSize',
+							description:
+								'The limit of how many bytes a message can contain before Amazon SQS rejects it. Valid values: An integer from 1,024 bytes (1 KiB) to 262,144 bytes (256 KiB). Default: 262,144 (256 KiB).',
+							type: Field_Type.NUMBER,
+							required: false,
+							defaultValue: this.helperService.value(262144),
+							fields: {},
+						},
+						{
+							name: 'messageRetentionPeriod',
+							description:
+								'The length of time, in seconds, for which Amazon SQS retains a message. Valid values: An integer from 60 seconds (1 minute) to 1,209,600 seconds (14 days). Default: 345,600 (4 days).',
+							type: Field_Type.NUMBER,
+							required: false,
+							defaultValue: this.helperService.value(345600),
+							fields: {},
+						},
+						{
+							name: 'policy',
+							description:
+								"The queue's policy. A valid Amazon Web Services policy",
+							type: Field_Type.STRUCT,
+							required: false,
+							fields: {},
+						},
+						{
+							name: 'receiveMessageWaitTime',
+							description:
+								'The length of time, in seconds, for which a ReceiveMessage action waits for a message to arrive. Valid values: An integer from 0 to 20 (seconds). Default: 0.',
+							type: Field_Type.NUMBER,
+							required: false,
+							defaultValue: this.helperService.value(0),
+							fields: {},
+						},
+						{
+							name: 'deadLetterTargetArn',
+							description:
+								'The Amazon Resource Name (ARN) of the dead-letter queue to which Amazon SQS moves messages after the value of maxReceiveCount is exceeded.',
 							type: Field_Type.STRING,
+							required: false,
+							fields: {},
+						},
+						{
+							name: 'maxReceiveCount',
+							description:
+								'The number of times a message is delivered to the source queue before being moved to the dead-letter queue. When the ReceiveCount for a message exceeds the maxReceiveCount for a queue, Amazon SQS moves the message to the dead-letter-queue.',
+							type: Field_Type.NUMBER,
+							required: false,
+							fields: {},
+						},
+						{
+							name: 'visibilityTimeout',
+							description:
+								'The visibility timeout for the queue, in seconds. Valid values: An integer from 0 to 43,200 (12 hours). Default: 30.',
+							type: Field_Type.NUMBER,
+							defaultValue: this.helperService.value(30),
 							required: false,
 							fields: {},
 						},
@@ -98,10 +165,66 @@ export class MainController implements MainServiceController {
 					method: Method.UPDATE,
 					inputs: [
 						{
-							name: 'access',
+							name: 'delay',
 							description:
-								'ACL Access Level (private, public-read, public-read-write, authenticated-read)',
+								'The length of time, in seconds, for which the delivery of all messages in the queue is delayed. Valid values: An integer from 0 to 900 seconds (15 minutes). Default: 0.',
+							type: Field_Type.NUMBER,
+							required: false,
+							fields: {},
+						},
+						{
+							name: 'maxMessageSize',
+							description:
+								'The limit of how many bytes a message can contain before Amazon SQS rejects it. Valid values: An integer from 1,024 bytes (1 KiB) to 262,144 bytes (256 KiB). Default: 262,144 (256 KiB).',
+							type: Field_Type.NUMBER,
+							required: false,
+							fields: {},
+						},
+						{
+							name: 'messageRetentionPeriod',
+							description:
+								'The length of time, in seconds, for which Amazon SQS retains a message. Valid values: An integer from 60 seconds (1 minute) to 1,209,600 seconds (14 days). Default: 345,600 (4 days).',
+							type: Field_Type.NUMBER,
+							required: false,
+							fields: {},
+						},
+						{
+							name: 'policy',
+							description:
+								"The queue's policy. A valid Amazon Web Services policy",
+							type: Field_Type.STRUCT,
+							required: false,
+							fields: {},
+						},
+						{
+							name: 'receiveMessageWaitTime',
+							description:
+								'The length of time, in seconds, for which a ReceiveMessage action waits for a message to arrive. Valid values: An integer from 0 to 20 (seconds). Default: 0.',
+							type: Field_Type.NUMBER,
+							required: false,
+							fields: {},
+						},
+						{
+							name: 'deadLetterTargetArn',
+							description:
+								'The Amazon Resource Name (ARN) of the dead-letter queue to which Amazon SQS moves messages after the value of maxReceiveCount is exceeded.',
 							type: Field_Type.STRING,
+							required: false,
+							fields: {},
+						},
+						{
+							name: 'maxReceiveCount',
+							description:
+								'The number of times a message is delivered to the source queue before being moved to the dead-letter queue. When the ReceiveCount for a message exceeds the maxReceiveCount for a queue, Amazon SQS moves the message to the dead-letter-queue.',
+							type: Field_Type.NUMBER,
+							required: false,
+							fields: {},
+						},
+						{
+							name: 'visibilityTimeout',
+							description:
+								'The visibility timeout for the queue, in seconds. Valid values: An integer from 0 to 43,200 (12 hours). Default: 30.',
+							type: Field_Type.NUMBER,
 							required: false,
 							fields: {},
 						},
@@ -115,7 +238,7 @@ export class MainController implements MainServiceController {
 		const credentials = request.credentials.aws;
 		if (!credentials) throw new MissingCredentialsException('AWS');
 
-		const details = await this.s3Service.findByID(
+		const details = await this.sqsService.findByID(
 			credentials,
 			request.resourceId,
 		);
@@ -129,7 +252,7 @@ export class MainController implements MainServiceController {
 		const credentials = request.credentials.aws;
 		if (!credentials) throw new MissingCredentialsException('AWS');
 
-		const status = await this.s3Service.getStatus(
+		const status = await this.sqsService.getStatus(
 			credentials,
 			request.resourceId,
 		);
@@ -149,18 +272,19 @@ export class MainController implements MainServiceController {
 		const credentials = request.credentials.aws;
 		if (!credentials) throw new MissingCredentialsException('AWS');
 		const input = await this.helperService.payloadToDTO(
-			CreateBucketDTO,
+			CreateQueueDTO,
 			request.payload,
 		);
 
 		try {
-			const status = await this.s3Service.create(
+			const status = await this.sqsService.create(
 				credentials,
 				request.resourceId,
 				input,
 			);
 			return { status };
 		} catch (err) {
+			console.log(err);
 			switch (err.name) {
 				case 'BucketAlreadyExists':
 					throw new RpcException({
@@ -208,12 +332,12 @@ export class MainController implements MainServiceController {
 		const credentials = request.credentials.aws;
 		if (!credentials) throw new MissingCredentialsException('AWS');
 		const input = await this.helperService.payloadToDTO(
-			UpdateBucketDTO,
+			UpdateQueueDTO,
 			request.payload,
 		);
 
 		try {
-			const status = await this.s3Service.update(
+			const status = await this.sqsService.update(
 				credentials,
 				request.resourceId,
 				input,
@@ -253,7 +377,7 @@ export class MainController implements MainServiceController {
 		if (!credentials) throw new MissingCredentialsException('AWS');
 
 		try {
-			const status = await this.s3Service.delete(
+			const status = await this.sqsService.delete(
 				credentials,
 				request.resourceId,
 			);

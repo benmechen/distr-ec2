@@ -11,9 +11,9 @@ async function bootstrap() {
 	app.connectMicroservice<MicroserviceOptions>({
 		transport: Transport.GRPC,
 		options: {
-			package: 's3',
+			package: 'sqs',
 			protoPath: join(__dirname, '../../protos/main.proto'),
-			url: 'localhost:50052',
+			url: 'localhost:50053',
 		},
 	});
 
@@ -22,7 +22,7 @@ async function bootstrap() {
 
 	await app.startAllMicroservices();
 
-	const port = configService.get('PORT') ?? 4001;
+	const port = configService.get('PORT') ?? 4002;
 	await app.listen(port);
 	// eslint-disable-next-line
 	console.log(`🚀 Server ready on port ${port}`);

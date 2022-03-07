@@ -1,5 +1,5 @@
 {
-	"name": "distr-s3",
+	"name": "distr-sqs",
 	"version": "0.0.1",
 	"description": "",
 	"author": "",
@@ -27,7 +27,7 @@
 		"generate": "protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./src/generated protos/main.proto --ts_proto_opt=nestJs=true -I ./protos"
 	},
 	"dependencies": {
-		"@aws-sdk/client-s3": "^3.51.0",
+		"@aws-sdk/client-sqs": "^3.53.0",
 		"@grpc/grpc-js": "^1.5.4",
 		"@grpc/proto-loader": "^0.6.9",
 		"@mikro-orm/cli": "^4.5.10",

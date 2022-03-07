@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "co/mechen/distr/common/v1.proto";
 
-package s3;
+package sqs;
 
 service MainService {
     rpc Reflect(co.mechen.distr.common.v1.ReflectMethodRequest) returns (co.mechen.distr.common.v1.ReflectMethodResponse) {}
@@ -12,12 +12,4 @@ service MainService {
     rpc Create(co.mechen.distr.common.v1.CreateRequest) returns (co.mechen.distr.common.v1.CreateResponse) {}
     rpc Update(co.mechen.distr.common.v1.UpdateRequest) returns (co.mechen.distr.common.v1.UpdateResponse) {}
     rpc Delete(co.mechen.distr.common.v1.DeleteRequest) returns (co.mechen.distr.common.v1.DeleteResponse) {}
-}
-
-message Bucket {
-    string name = 1;
-}
-
-message BucketById {
-    string id = 1;
 }

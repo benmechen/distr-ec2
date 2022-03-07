@@ -5,7 +5,7 @@ import {
 } from '@mikro-orm/nestjs';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3 } from './s3/s3.entity';
+import { SQS } from './sqs/sqs.entity';
 
 @Injectable()
 export class DBConfig implements MikroOrmOptionsFactory<MySqlDriver> {
@@ -19,7 +19,7 @@ export class DBConfig implements MikroOrmOptionsFactory<MySqlDriver> {
 			port: +(this.configService.get<number>('DB_PORT') ?? 3306),
 			user: this.configService.get('DB_USER'),
 			password: this.configService.get('DB_PASSWORD'),
-			entities: [S3],
+			entities: [SQS],
 		};
 
 		// if (migration) config.

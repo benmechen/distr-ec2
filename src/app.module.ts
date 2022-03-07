@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { S3Module } from './s3/s3.module';
 import { MainController } from './main.controller';
 import { HelperService } from './helper/helper.service';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DBConfig } from './db.config';
+import { SqsModule } from './sqs/sqs.module';
 
 @Module({
 	imports: [
@@ -18,7 +18,7 @@ import { DBConfig } from './db.config';
 			useClass: DBConfig,
 			inject: [ConfigService],
 		}),
-		S3Module,
+		SqsModule,
 	],
 	controllers: [AppController, MainController],
 	providers: [AppService, HelperService],

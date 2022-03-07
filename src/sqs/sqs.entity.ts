@@ -1,12 +1,12 @@
 import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
 
 @Entity({
-	tableName: 'buckets',
+	tableName: 'queues',
 })
-export class S3 {
+export class SQS {
 	@PrimaryKey()
 	resourceId: string;
 
 	@Property()
-	name: string;
+	queueUrl: string;
 }
