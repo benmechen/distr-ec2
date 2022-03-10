@@ -2,10 +2,21 @@ import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { Validator } from 'class-validator';
 import { status as GrpcStatus } from '@grpc/grpc-js';
-import { Input, Property, Value } from '../generated/co/mechen/distr/common/v1';
+import {
+	Input,
+	Property,
+	Value,
+} from '../../generated/co/mechen/distr/common/v1';
+import { customAlphabet } from 'nanoid';
+import { alphanumeric } from 'nanoid-dictionary';
+import { ConfigService } from '@nestjs/config';
+
+const nanoid = customAlphabet(alphanumeric);
 
 @Injectable()
 export class HelperService {
+	constructor(private readonly configService: ConfigService) {}
+
 	private validator = new Validator();
 
 	async payloadToDTO<T extends object>(
@@ -89,5 +100,17 @@ export class HelperService {
 					structValue: undefined,
 				};
 		}
+	}
+
+	random(length = 6) {
+		return nanoid(length);
+	}
+
+	get(key: string) {
+		const value = this.configService.get(key);
+
+		if (!value) throw new Error(`Value for ${key} not provided`);
+
+		return value;
 	}
 }
