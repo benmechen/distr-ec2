@@ -144,8 +144,6 @@ export class MainController implements MainServiceController {
 			);
 			const properties = res ? this.helperService.dtoToPayload(res) : [];
 
-			console.log(properties);
-
 			return {
 				status: !!res,
 				properties,
