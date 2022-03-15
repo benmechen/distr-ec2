@@ -6,7 +6,6 @@ import {
 	GetResponse,
 	StatusRequest,
 	StatusResponse,
-	UsageRequest,
 	UsageResponse,
 	CreateRequest,
 	CreateResponse,
@@ -42,7 +41,7 @@ export class MacController implements MainServiceController {
 		return this.mainController.status(request);
 	}
 
-	async usage(request: UsageRequest): Promise<UsageResponse> {
+	async usage(): Promise<UsageResponse> {
 		return this.mainController.usage();
 	}
 

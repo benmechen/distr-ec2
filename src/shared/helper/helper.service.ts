@@ -2,14 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { Validator } from 'class-validator';
 import { status as GrpcStatus } from '@grpc/grpc-js';
+import { customAlphabet } from 'nanoid';
+import { alphanumeric } from 'nanoid-dictionary';
+import { ConfigService } from '@nestjs/config';
 import {
 	Input,
 	Property,
 	Value,
 } from '../../generated/co/mechen/distr/common/v1';
-import { customAlphabet } from 'nanoid';
-import { alphanumeric } from 'nanoid-dictionary';
-import { ConfigService } from '@nestjs/config';
 
 const nanoid = customAlphabet(alphanumeric);
 

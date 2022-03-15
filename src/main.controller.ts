@@ -1,12 +1,13 @@
 import { RpcException } from '@nestjs/microservices';
 import { status as GrpcStatus } from '@grpc/grpc-js';
+import { Injectable } from '@nestjs/common';
 import { MissingCredentialsException } from './exceptions/missing-credentials.exception';
 import {
 	CreateRequest,
 	CreateResponse,
 	DeleteRequest,
 	DeleteResponse,
-	Field_Type,
+	Field_Type as FieldType,
 	GetRequest,
 	GetResponse,
 	Method,
@@ -24,7 +25,6 @@ import { HelperService } from './shared/helper/helper.service';
 import { Ec2Service } from './ec2/ec2.service';
 import { CreateEC2DTO } from './ec2/dto/create-ec2.dto';
 import { UpdateEC2DTO } from './ec2/dto/update-ec2.dto';
-import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class MainController implements MainServiceController {
@@ -43,21 +43,21 @@ export class MainController implements MainServiceController {
 						{
 							name: 'name',
 							description: 'Bucket name (globally unique)',
-							type: Field_Type.STRING,
+							type: FieldType.STRING,
 							required: true,
 							fields: {},
 						},
 						{
 							name: 'public',
 							description: 'Are the objects publically visible?',
-							type: Field_Type.BOOLEAN,
+							type: FieldType.BOOLEAN,
 							required: true,
 							fields: {},
 						},
 						{
 							name: 'location',
 							description: 'Region the bucket is hosted in',
-							type: Field_Type.STRING,
+							type: FieldType.STRING,
 							required: false,
 							fields: {},
 						},
@@ -70,7 +70,7 @@ export class MainController implements MainServiceController {
 						{
 							name: 'name',
 							description: 'EC2 instance name',
-							type: Field_Type.STRING,
+							type: FieldType.STRING,
 							required: true,
 							fields: {},
 						},
@@ -84,13 +84,20 @@ export class MainController implements MainServiceController {
 						{
 							name: 'instanceType',
 							description: 'Chance the instance type',
-							type: Field_Type.STRING,
+							type: FieldType.STRING,
 							required: false,
 							fields: {},
 						},
 					],
 					outputs: [],
 				};
+			default: {
+				return {
+					method: Method.UNRECOGNIZED,
+					inputs: [],
+					outputs: [],
+				};
+			}
 		}
 	}
 
@@ -151,38 +158,43 @@ export class MainController implements MainServiceController {
 		} catch (err) {
 			console.log(err);
 			switch (err.name) {
-				case 'BucketAlreadyExists':
+				case 'InvalidAction':
 					throw new RpcException({
 						message:
-							'A bucket with that name already exists. Bucket names must be unique.',
-						code: GrpcStatus.ALREADY_EXISTS,
+							'The action or operation requested is not valid. Verify that the action is typed correctly.',
+						code: GrpcStatus.INVALID_ARGUMENT,
 					});
-				case 'InvalidSecurity':
-				case 'InvalidAccessKeyId':
+				case 'InvalidCharacter':
+				case 'InvalidParameter':
+				case 'InvalidParameterValue':
 					throw new RpcException({
-						code: GrpcStatus.PERMISSION_DENIED,
-						message: 'The given credentials are not valid',
+						code: GrpcStatus.INVALID_ARGUMENT,
+						message: 'The specified input is not valid.',
 					});
-				case 'BucketAlreadyOwnedByYou':
+				case 'DefaultVpcDoesNotExist':
+					throw new RpcException({
+						message: 'The default VPC no longer exists.',
+						code: GrpcStatus.ABORTED,
+					});
+				case 'InstanceLimitExceeded':
+				case 'HostLimitExceeded':
 					throw new RpcException({
 						message:
-							'You already have a bucket with that name. Bucket names must be unique.',
-						code: GrpcStatus.ALREADY_EXISTS,
-					});
-				case 'InvalidBucketName':
-					throw new RpcException({
-						message: 'That bucket name is invalid',
-						code: GrpcStatus.FAILED_PRECONDITION,
-					});
-				case 'TooManyBuckets':
-					throw new RpcException({
-						message: 'You have too many existing S3 buckets',
+							"You've reached the limit on the number of Dedicated Hosts or instances that you can allocate.",
 						code: GrpcStatus.OUT_OF_RANGE,
 					});
-				case 'InvalidBucketName':
+				case 'InsufficientFreeAddressesInSubnet':
 					throw new RpcException({
-						message: 'That bucket name is invalid',
-						code: GrpcStatus.FAILED_PRECONDITION,
+						message:
+							'The specified subnet does not contain enough free private IP addresses to fulfill your request.',
+						code: GrpcStatus.OUT_OF_RANGE,
+					});
+				case 'IncorrectState':
+				case 'IncorrectInstanceState':
+					throw new RpcException({
+						message:
+							'The instance is in an incorrect state for the requested action.',
+						code: GrpcStatus.ABORTED,
 					});
 				default:
 					throw new RpcException({
@@ -214,27 +226,49 @@ export class MainController implements MainServiceController {
 			};
 		} catch (err) {
 			switch (err.name) {
-				case 'AccessDenied':
+				case 'InvalidAction':
 					throw new RpcException({
-						code: GrpcStatus.PERMISSION_DENIED,
-						message: 'You do not have access to that bucket',
+						message:
+							'The action or operation requested is not valid. Verify that the action is typed correctly.',
+						code: GrpcStatus.INVALID_ARGUMENT,
 					});
-				case 'NoSuchBucket':
+				case 'InvalidCharacter':
+				case 'InvalidParameter':
+				case 'InvalidParameterValue':
 					throw new RpcException({
-						code: GrpcStatus.NOT_FOUND,
-						message: 'No bucket could be found with that name',
+						code: GrpcStatus.INVALID_ARGUMENT,
+						message: 'The specified input is not valid.',
 					});
-				case 'InvalidSecurity':
-				case 'InvalidAccessKeyId':
+				case 'DefaultVpcDoesNotExist':
 					throw new RpcException({
-						code: GrpcStatus.PERMISSION_DENIED,
-						message: 'The given credentials are not valid',
+						message: 'The default VPC no longer exists.',
+						code: GrpcStatus.ABORTED,
+					});
+				case 'InstanceLimitExceeded':
+				case 'HostLimitExceeded':
+					throw new RpcException({
+						message:
+							"You've reached the limit on the number of Dedicated Hosts or instances that you can allocate.",
+						code: GrpcStatus.OUT_OF_RANGE,
+					});
+				case 'InsufficientFreeAddressesInSubnet':
+					throw new RpcException({
+						message:
+							'The specified subnet does not contain enough free private IP addresses to fulfill your request.',
+						code: GrpcStatus.OUT_OF_RANGE,
+					});
+				case 'IncorrectState':
+				case 'IncorrectInstanceState':
+					throw new RpcException({
+						message:
+							'The instance is in an incorrect state for the requested action.',
+						code: GrpcStatus.ABORTED,
 					});
 				default:
-					return {
-						status: false,
-						properties: [],
-					};
+					throw new RpcException({
+						code: GrpcStatus.UNKNOWN,
+						message: `Unkown error occurred [${err.name}]`,
+					});
 			}
 		}
 	}
@@ -254,27 +288,49 @@ export class MainController implements MainServiceController {
 			};
 		} catch (err) {
 			switch (err.name) {
-				case 'AccessDenied':
+				case 'InvalidAction':
 					throw new RpcException({
-						code: GrpcStatus.PERMISSION_DENIED,
-						message: 'You do not have access to that bucket',
-					});
-				case 'InvalidSecurity':
-				case 'InvalidAccessKeyId':
-					throw new RpcException({
-						code: GrpcStatus.PERMISSION_DENIED,
-						message: 'The given credentials are not valid',
-					});
-				case 'BucketNotEmpty':
-					throw new RpcException({
-						code: GrpcStatus.FAILED_PRECONDITION,
 						message:
-							'Buckets must be empty before they can be deleted',
+							'The action or operation requested is not valid. Verify that the action is typed correctly.',
+						code: GrpcStatus.INVALID_ARGUMENT,
+					});
+				case 'InvalidCharacter':
+				case 'InvalidParameter':
+				case 'InvalidParameterValue':
+					throw new RpcException({
+						code: GrpcStatus.INVALID_ARGUMENT,
+						message: 'The specified input is not valid.',
+					});
+				case 'DefaultVpcDoesNotExist':
+					throw new RpcException({
+						message: 'The default VPC no longer exists.',
+						code: GrpcStatus.ABORTED,
+					});
+				case 'InstanceLimitExceeded':
+				case 'HostLimitExceeded':
+					throw new RpcException({
+						message:
+							"You've reached the limit on the number of Dedicated Hosts or instances that you can allocate.",
+						code: GrpcStatus.OUT_OF_RANGE,
+					});
+				case 'InsufficientFreeAddressesInSubnet':
+					throw new RpcException({
+						message:
+							'The specified subnet does not contain enough free private IP addresses to fulfill your request.',
+						code: GrpcStatus.OUT_OF_RANGE,
+					});
+				case 'IncorrectState':
+				case 'IncorrectInstanceState':
+					throw new RpcException({
+						message:
+							'The instance is in an incorrect state for the requested action.',
+						code: GrpcStatus.ABORTED,
 					});
 				default:
-					return {
-						status: false,
-					};
+					throw new RpcException({
+						code: GrpcStatus.UNKNOWN,
+						message: `Unkown error occurred [${err.name}]`,
+					});
 			}
 		}
 	}

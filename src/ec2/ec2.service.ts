@@ -169,7 +169,7 @@ export class Ec2Service {
 
 		const response = await client.send(modifyAttributeCommand);
 
-		return true;
+		return !!response;
 	}
 
 	async delete(credentials: AWSCredentials, resourceId: string) {

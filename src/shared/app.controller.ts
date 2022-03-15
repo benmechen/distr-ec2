@@ -4,8 +4,6 @@ import { join } from 'path';
 
 @Controller()
 export class AppController {
-	constructor() {}
-
 	@Get('_introspect')
 	@Header('content-type', 'application/x-protobuf')
 	async getProto(): Promise<string> {

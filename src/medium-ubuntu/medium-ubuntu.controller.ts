@@ -12,7 +12,6 @@ import {
 	StatusResponse,
 	UpdateRequest,
 	UpdateResponse,
-	UsageRequest,
 	UsageResponse,
 } from '../generated/co/mechen/distr/common/v1';
 import {
@@ -42,7 +41,7 @@ export class MediumUbuntuController implements MainServiceController {
 		return this.mainController.status(request);
 	}
 
-	async usage(request: UsageRequest): Promise<UsageResponse> {
+	async usage(): Promise<UsageResponse> {
 		return this.mainController.usage();
 	}
 
