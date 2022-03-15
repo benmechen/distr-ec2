@@ -72,7 +72,7 @@ jobs:
     #           run: docker-compose down
     build:
         runs-on: ubuntu-latest
-        needs: [format-lint, unit-test, integration-test]
+        needs: [format-lint, unit-test]
         if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/staging')
         permissions:
             contents: read
