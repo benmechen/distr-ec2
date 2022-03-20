@@ -25,7 +25,7 @@ async function bootstrap() {
 			options: {
 				package: 'sqs',
 				protoPath: join(__dirname, '../../protos/main.proto'),
-				url: `localhost:${ports.grpc}`,
+				url: `0.0.0.0:${ports.grpc}`,
 			},
 		});
 
