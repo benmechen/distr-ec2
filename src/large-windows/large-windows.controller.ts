@@ -13,6 +13,7 @@ import {
 	UpdateResponse,
 	DeleteRequest,
 	DeleteResponse,
+	UsageRequest,
 } from '../generated/co/mechen/distr/common/v1';
 import {
 	MainServiceController,
@@ -41,8 +42,8 @@ export class LargeWindowsController implements MainServiceController {
 		return this.mainController.status(request);
 	}
 
-	async usage(): Promise<UsageResponse> {
-		return this.mainController.usage();
+	async usage(request: UsageRequest): Promise<UsageResponse> {
+		return this.mainController.usage(request);
 	}
 
 	async create(request: CreateRequest): Promise<CreateResponse> {
