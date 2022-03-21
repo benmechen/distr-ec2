@@ -139,7 +139,7 @@ export class MainController implements MainServiceController {
 			request.resourceId,
 		);
 
-		if (usage == undefined)
+		if (usage !== 0 && !usage)
 			return {
 				type: UsageType.UNLIMITED,
 			};
