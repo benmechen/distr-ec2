@@ -28,6 +28,7 @@
 		"generate": "protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./src/generated protos/main.proto --ts_proto_opt=nestJs=true -I ./protos"
 	},
 	"dependencies": {
+		"@aws-sdk/client-cloudwatch": "^3.54.1",
 		"@aws-sdk/client-ec2": "^3.53.0",
 		"@grpc/grpc-js": "^1.5.4",
 		"@grpc/proto-loader": "^0.6.9",

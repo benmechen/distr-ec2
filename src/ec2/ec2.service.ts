@@ -1,4 +1,8 @@
 import {
+	CloudWatchClient,
+	GetMetricStatisticsCommand,
+} from '@aws-sdk/client-cloudwatch';
+import {
 	AuthorizeSecurityGroupEgressCommand,
 	AuthorizeSecurityGroupIngressCommand,
 	CreateKeyPairCommand,
@@ -19,6 +23,8 @@ import { HelperService } from '../shared/helper/helper.service';
 import { CreateEC2DTO } from './dto/create-ec2.dto';
 import { UpdateEC2DTO } from './dto/update-ec2.dto';
 import { EC2 } from './ec2.entity';
+
+export type Newable<T> = { new (...args: any[]): T };
 
 @Injectable()
 export class Ec2Service {
@@ -74,6 +80,41 @@ export class Ec2Service {
 				default:
 					return Status.DOWN;
 			}
+		} catch (err) {
+			console.log(err);
+			switch (err.name) {
+				case 'NotFound':
+					return Status.DOWN;
+				default:
+					return Status.DEGRADED;
+			}
+		}
+	}
+
+	async getUsage(credentials: AWSCredentials, resourceId: string) {
+		const cloudwatchClient = this.connect(credentials, CloudWatchClient);
+		const ec2 = await this.ec2Repository.findOneOrFail({
+			resourceId,
+		});
+
+		try {
+			const getMetricsCommand = new GetMetricStatisticsCommand({
+				Namespace: 'AWS/EC2',
+				MetricName: 'CPUUtilization',
+				EndTime: new Date(),
+				StartTime: new Date(),
+				Period: 3600,
+				Dimensions: [
+					{
+						Name: 'InstanceId',
+						Value: ec2.instanceId,
+					},
+				],
+			});
+			const res = await cloudwatchClient.send(getMetricsCommand);
+			const usage = res.Datapoints?.[0];
+
+			return usage.Average;
 		} catch (err) {
 			console.log(err);
 			switch (err.name) {
@@ -188,8 +229,21 @@ export class Ec2Service {
 		return response.TerminatingInstances.length > 0;
 	}
 
-	private connect(credentials: AWSCredentials): EC2Client {
-		return new EC2Client({
+	private connect<C extends EC2Client | CloudWatchClient = EC2Client>(
+		credentials: AWSCredentials,
+		client?: Newable<C>,
+	): C {
+		return new (client ?? EC2Client)({
+			region: credentials.region,
+			credentials: {
+				accessKeyId: credentials.id,
+				secretAccessKey: credentials.secret,
+			},
+		}) as C;
+	}
+
+	private connectCloudwatch(credentials: AWSCredentials): CloudWatchClient {
+		return new CloudWatchClient({
 			region: credentials.region,
 			credentials: {
 				accessKeyId: credentials.id,

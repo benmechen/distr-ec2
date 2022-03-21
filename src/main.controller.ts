@@ -17,6 +17,7 @@ import {
 	StatusResponse,
 	UpdateRequest,
 	UpdateResponse,
+	UsageRequest,
 	UsageResponse,
 	UsageType,
 } from './generated/co/mechen/distr/common/v1';
@@ -129,9 +130,24 @@ export class MainController implements MainServiceController {
 		};
 	}
 
-	async usage(): Promise<UsageResponse> {
+	async usage(request: UsageRequest): Promise<UsageResponse> {
+		const credentials = request.credentials.aws;
+		if (!credentials) throw new MissingCredentialsException('AWS');
+
+		const usage = await this.ec2Service.getUsage(
+			credentials,
+			request.resourceId,
+		);
+
+		if (usage == undefined)
+			return {
+				type: UsageType.UNLIMITED,
+			};
+
 		return {
-			type: UsageType.UNLIMITED,
+			type: UsageType.LIMITED,
+			current: usage,
+			limit: 100,
 		};
 	}
 
